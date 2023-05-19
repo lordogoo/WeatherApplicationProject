@@ -1,0 +1,25 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using WeatherApplicationProject.Views.Home;
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@model IndexModel
+@{
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+
+
+    @if (SignInManager.IsSignedIn(User))
+    {
+        <div style="white-space:pre-line;">
+            @await Model.GetWeatherData()
+        </div>
+    }
+    else
+    {
+        <div style="white-space:pre-line;">
+           login to view weather dates.
+        </div>
+    }
+</div>
