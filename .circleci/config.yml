@@ -1,0 +1,49 @@
+version: 2.1
+orbs:
+  azure-cli: circleci/azure-cli@1.2.0
+  windows: circleci/windows@2.2.0
+jobs:
+  build:
+    description: Build application with Release configuration
+    executor:
+      name: windows/default
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - dotnet-packages-v1-{{ checksum "dotnet-core-sample.csproj" }}
+      - run:
+          name: "Install project dependencies"
+          command: dotnet.exe restore
+      - run:
+          name: "Build Application according to some given configuration"
+          command: dotnet.exe build --configuration Release
+      - run:
+          name: "Publish to a subfolder"
+          command: |
+            dotnet.exe publish --configuration Release --output WebAPIFolder
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - WebAPIFolder
+  login-to-azure-and-deploy:
+    executor: azure-cli/azure-docker
+    steps:
+      - azure-cli/install
+      - azure-cli/login-with-user:
+          alternate-tenant: false
+      - attach_workspace:
+          at: ~/project
+      - run:
+          command: az webapp deployment source show --resource-group sample-dotnet-core --name sample-dotnet-core-application
+      - run:
+          name: "Deploy Web App to Azure"
+          command: |
+            az webapp deployment source config-local-git --resource-group sample-dotnet-core --name sample-dotnet-core-application
+workflows:
+  build-and-deploy:
+    jobs:
+      - build
+      - login-to-azure-and-deploy:
+          requires:
+            - build
